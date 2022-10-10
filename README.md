@@ -64,6 +64,8 @@ We currently provide the following checkpoints:
 filtered to images with an original size `>= 512x512`, and an estimated watermark probability `< 0.5`. The watermark estimate is from the [LAION-5B](https://laion.ai/blog/laion-5b/) metadata, the aesthetics score is estimated using the [LAION-Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor)).
 - `sd-v1-3.ckpt`: Resumed from `sd-v1-2.ckpt`. 195k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
 - `sd-v1-4.ckpt`: Resumed from `sd-v1-2.ckpt`. 225k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
+- `sd-v1-5.ckpt`: Resumed from `sd-v1-2.ckpt`. 595k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
+- `sd-v1-5-inpainting.ckpt`: Resumed from `sd-v1-5.ckpt`. 440k steps of inpainting training at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598). The UNet has 5 additional input channels (4 for the encoded masked-image and 1 for the mask itself) whose weights are zero-initialized after restoring the `sd-v1-5.ckpt` checkpoint. During training, we generate synthetic masks and in 25\% mask everything.
 
 Evaluations with different classifier-free guidance scales (1.5, 2.0, 3.0, 4.0,
 5.0, 6.0, 7.0, 8.0) and 50 PLMS sampling
@@ -163,6 +165,17 @@ with autocast("cuda"):
     
 image.save("astronaut_rides_horse.png")
 ```
+
+
+### Image Inpainting with Stable Diffusion
+
+[Download the checkpoint](https://huggingface.co/CompVis/stable-diffusion-v1-5-inpainting-original) finetuned for inpainting and run
+
+```
+streamlit run scripts/inpaint_st.py -- configs/stable-diffusion/v1-inpainting-inference.yaml <path-to-checkpoint>
+```
+
+for a streamlit demo of the inpainting model.
 
 
 ### Image Modification with Stable Diffusion

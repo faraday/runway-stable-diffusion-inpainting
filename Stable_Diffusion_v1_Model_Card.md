@@ -5,7 +5,7 @@ This model card focuses on the model associated with the Stable Diffusion model,
 - **Developed by:** Robin Rombach, Patrick Esser
 - **Model type:** Diffusion-based text-to-image generation model
 - **Language(s):** English
-- **License:** [Proprietary](LICENSE)
+- **License:** [CreativeML Open RAIL-M](https://github.com/CompVis/stable-diffusion/blob/main/LICENSE)
 - **Model Description:** This is a model that can be used to generate and modify images based on text prompts. It is a [Latent Diffusion Model](https://arxiv.org/abs/2112.10752) that uses a fixed, pretrained text encoder ([CLIP ViT-L/14](https://arxiv.org/abs/2103.00020)) as suggested in the [Imagen paper](https://arxiv.org/abs/2205.11487).
 - **Resources for more information:** [GitHub Repository](https://github.com/CompVis/stable-diffusion), [Paper](https://arxiv.org/abs/2112.10752).
 - **Cite as:**
@@ -104,6 +104,8 @@ We currently provide the following checkpoints:
 filtered to images with an original size `>= 512x512`, and an estimated watermark probability `< 0.5`. The watermark estimate is from the [LAION-5B](https://laion.ai/blog/laion-5b/) metadata, the aesthetics score is estimated using the [LAION-Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor)).
 - `sd-v1-3.ckpt`: Resumed from `sd-v1-2.ckpt`. 195k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
 - `sd-v1-4.ckpt`: Resumed from `sd-v1-2.ckpt`. 225k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
+- `sd-v1-5.ckpt`: Resumed from `sd-v1-2.ckpt`. 595k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
+- `sd-v1-5-inpainting.ckpt`: Resumed from `sd-v1-5.ckpt`. 440k steps of inpainting training at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598). The UNet has 5 additional input channels (4 for the encoded masked-image and 1 for the mask itself) whose weights are zero-initialized after restoring the `sd-v1-5.ckpt` checkpoint. During training, we generate synthetic masks and in 25\% mask everything.
 
 - **Hardware:** 32 x 8 x A100 GPUs
 - **Optimizer:** AdamW
