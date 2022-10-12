@@ -3,9 +3,12 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 from omegaconf import OmegaConf
+from einops import repeat
 from main import instantiate_from_config
 from streamlit_drawable_canvas import st_canvas
 import torch
+
+
 from ldm.models.diffusion.ddim import DDIMSampler
 
 
@@ -27,7 +30,8 @@ def make_batch_sd(
         image,
         mask,
         txt,
-        device):
+        device,
+        num_samples=1):
     image = np.array(image.convert("RGB"))
     image = image[None].transpose(0,3,1,2)
     image = torch.from_numpy(image).to(dtype=torch.float32)/127.5-1.0
@@ -42,25 +46,25 @@ def make_batch_sd(
     masked_image = image * (mask < 0.5)
 
     batch = {
-            "image": image.to(device=device),
-            "txt": [txt],
-            "mask": mask.to(device=device),
-            "masked_image": masked_image.to(device=device),
+            "image": repeat(image.to(device=device), "1 ... -> n ...", n=num_samples),
+            "txt": num_samples * [txt],
+            "mask": repeat(mask.to(device=device), "1 ... -> n ...", n=num_samples),
+            "masked_image": repeat(masked_image.to(device=device), "1 ... -> n ...", n=num_samples),
             }
     return batch
 
 
-def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps):
+def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = sampler.model
 
     prng = np.random.RandomState(seed)
-    start_code = prng.randn(1, 4, 64, 64)
+    start_code = prng.randn(num_samples, 4, 64, 64)
     start_code = torch.from_numpy(start_code).to(device=device, dtype=torch.float32)
 
     with torch.no_grad():
         with torch.autocast("cuda"):
-            batch = make_batch_sd(image, mask, txt=prompt, device=device)
+            batch = make_batch_sd(image, mask, txt=prompt, device=device, num_samples=num_samples)
 
             c = model.cond_stage_model.encode(batch["txt"])
 
@@ -68,7 +72,7 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps):
             for ck in model.concat_keys:
                 cc = batch[ck].float()
                 if ck != model.masked_image_key:
-                    bchw = [1, 4, 64, 64]
+                    bchw = [num_samples, 4, 64, 64]
                     cc = torch.nn.functional.interpolate(cc, size=bchw[-2:])
                 else:
                     cc = model.get_first_stage_encoding(model.encode_first_stage(cc))
@@ -79,17 +83,17 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps):
             cond={"c_concat": [c_cat], "c_crossattn": [c]}
 
             # uncond cond
-            uc_cross = model.get_unconditional_conditioning(1, "")
+            uc_cross = model.get_unconditional_conditioning(num_samples, "")
             uc_full = {"c_concat": [c_cat], "c_crossattn": [uc_cross]}
 
             shape = [model.channels, 64, 64]
             samples_cfg, intermediates = sampler.sample(
                     ddim_steps,
-                    1,
+                    num_samples,
                     shape,
                     cond,
                     verbose=False,
-                    eta=0.0,
+                    eta=1.0,
                     unconditional_guidance_scale=scale,
                     unconditional_conditioning=uc_full,
                     x_T=start_code,
@@ -99,9 +103,9 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps):
             result = torch.clamp((x_samples_ddim+1.0)/2.0,
                                  min=0.0, max=1.0)
 
-            result = result.cpu().numpy().transpose(0,2,3,1)[0]*255
-            result = Image.fromarray(result.astype(np.uint8))
-    return result
+            result = result.cpu().numpy().transpose(0,2,3,1)*255
+            #result = Image.fromarray(result.astype(np.uint8))
+    return [Image.fromarray(img.astype(np.uint8)) for img in result]
 
 
 def run():
@@ -118,6 +122,7 @@ def run():
         prompt = st.text_input("Prompt")
 
         seed = st.number_input("Seed", min_value=0, max_value=1000000, value=0)
+        num_samples = st.number_input("Number of Samples", min_value=1, max_value=64, value=1)
         scale = st.slider("Scale", min_value=0.1, max_value=30.0, value=7.5, step=0.1)
         ddim_steps = st.slider("DDIM Steps", min_value=0, max_value=50, value=50, step=1)
 
@@ -158,9 +163,11 @@ def run():
                     seed=seed,
                     scale=scale,
                     ddim_steps=ddim_steps,
+                    num_samples=num_samples
                 )
                 st.write("Inpainted")
-                st.image(result)
+                for image in result:
+                    st.image(image)
 
 
 if __name__ == "__main__":

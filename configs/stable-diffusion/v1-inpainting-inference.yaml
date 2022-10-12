@@ -15,6 +15,7 @@ model:
     conditioning_key: hybrid   # important
     monitor: val/loss_simple_ema
     scale_factor: 0.18215
+    finetune_keys: null
 
     scheduler_config: # 10000 warmup steps
       target: ldm.lr_scheduler.LambdaLinearScheduler
