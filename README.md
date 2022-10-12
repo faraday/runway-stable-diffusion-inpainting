@@ -65,12 +65,12 @@ filtered to images with an original size `>= 512x512`, and an estimated watermar
 - `sd-v1-3.ckpt`: Resumed from `sd-v1-2.ckpt`. 195k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
 - `sd-v1-4.ckpt`: Resumed from `sd-v1-2.ckpt`. 225k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
 - `sd-v1-5.ckpt`: Resumed from `sd-v1-2.ckpt`. 595k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
-- `sd-v1-5-inpainting.ckpt`: Resumed from `sd-v1-5.ckpt`. 440k steps of inpainting training at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598). The UNet has 5 additional input channels (4 for the encoded masked-image and 1 for the mask itself) whose weights are zero-initialized after restoring the `sd-v1-5.ckpt` checkpoint. During training, we generate synthetic masks and in 25\% mask everything.
+- `sd-v1-5-inpainting.ckpt`: Resumed from `sd-v1-5.ckpt`. 440k steps of inpainting training at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598). The UNet has 5 additional input channels (4 for the encoded masked-image and 1 for the mask itself) whose weights were zero-initialized after restoring the `sd-v1-5.ckpt` checkpoint. During training, we generate synthetic masks and in 25\% mask everything.
 
 Evaluations with different classifier-free guidance scales (1.5, 2.0, 3.0, 4.0,
 5.0, 6.0, 7.0, 8.0) and 50 PLMS sampling
 steps show the relative improvements of the checkpoints:
-![sd evaluation results](assets/v1-variants-scores.jpg)
+![sd evaluation results](assets/v1-1-to-v1-5.png)
 
 
 
