@@ -168,7 +168,7 @@ image.save("astronaut_rides_horse.png")
 
 
 ### Image Inpainting with Stable Diffusion
-
+![txt2img-stable2](assets/stable-inpainting/merged-bench.png)
 [Download the checkpoint](https://huggingface.co/CompVis/stable-diffusion-v1-5-inpainting-original) finetuned for inpainting and run
 
 ```
