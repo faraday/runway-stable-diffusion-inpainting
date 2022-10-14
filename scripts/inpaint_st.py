@@ -54,12 +54,12 @@ def make_batch_sd(
     return batch
 
 
-def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1):
+def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1, w=512, h=512):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = sampler.model
 
     prng = np.random.RandomState(seed)
-    start_code = prng.randn(num_samples, 4, 64, 64)
+    start_code = prng.randn(num_samples, 4, h//8, w//8)
     start_code = torch.from_numpy(start_code).to(device=device, dtype=torch.float32)
 
     with torch.no_grad():
@@ -72,7 +72,7 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1
             for ck in model.concat_keys:
                 cc = batch[ck].float()
                 if ck != model.masked_image_key:
-                    bchw = [num_samples, 4, 64, 64]
+                    bchw = [num_samples, 4, h//8, w//8]
                     cc = torch.nn.functional.interpolate(cc, size=bchw[-2:])
                 else:
                     cc = model.get_first_stage_encoding(model.encode_first_stage(cc))
@@ -86,7 +86,7 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1
             uc_cross = model.get_unconditional_conditioning(num_samples, "")
             uc_full = {"c_concat": [c_cat], "c_crossattn": [uc_cross]}
 
-            shape = [model.channels, 64, 64]
+            shape = [model.channels, h//8, w//8]
             samples_cfg, intermediates = sampler.sample(
                     ddim_steps,
                     num_samples,
@@ -104,7 +104,6 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1
                                  min=0.0, max=1.0)
 
             result = result.cpu().numpy().transpose(0,2,3,1)*255
-            #result = Image.fromarray(result.astype(np.uint8))
     return [Image.fromarray(img.astype(np.uint8)) for img in result]
 
 
@@ -116,8 +115,10 @@ def run():
     image = st.file_uploader("Image", ["jpg", "png"])
     if image:
         image = Image.open(image)
-        image = image.resize((512, 512))
-        width, height = image.size
+        w, h = image.size
+        print(f"loaded input image of size ({w}, {h})")
+        width, height = map(lambda x: x - x % 64, (w, h))  # resize to integer multiple of 32
+        image = image.resize((width, height))
 
         prompt = st.text_input("Prompt")
 
@@ -163,7 +164,8 @@ def run():
                     seed=seed,
                     scale=scale,
                     ddim_steps=ddim_steps,
-                    num_samples=num_samples
+                    num_samples=num_samples,
+                    h=height, w=width
                 )
                 st.write("Inpainted")
                 for image in result:
