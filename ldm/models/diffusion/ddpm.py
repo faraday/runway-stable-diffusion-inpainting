@@ -1470,6 +1470,7 @@ class LatentInpaintDiffusion(LatentDiffusion):
         self,
         concat_keys=("mask", "masked_image"),
         masked_image_key="masked_image",
+        finetune_keys=None,
         *args,
         **kwargs,
     ):
