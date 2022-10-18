@@ -1,5 +1,6 @@
-# Stable Diffusion
-*Stable Diffusion was made possible thanks to a collaboration with [Stability AI](https://stability.ai/) and [Runway](https://runwayml.com/) and builds upon our previous work:*
+## Stable Diffusion
+
+*[Stable Diffusion](https://github.com/compvis/stable-diffusion) builds upon our previous work with the [CompVis group](https://ommer-lab.com/):*
 
 [**High-Resolution Image Synthesis with Latent Diffusion Models**](https://ommer-lab.com/research/latent-diffusion-models/)<br/>
 [Robin Rombach](https://github.com/rromb)\*,
@@ -18,6 +19,12 @@ Similar to Google's [Imagen](https://arxiv.org/abs/2205.11487),
 this model uses a frozen CLIP ViT-L/14 text encoder to condition the model on text prompts.
 With its 860M UNet and 123M text encoder, the model is relatively lightweight and runs on a GPU with at least 10GB VRAM.
 See [this section](#stable-diffusion-v1) below and the [model card](https://huggingface.co/CompVis/stable-diffusion).
+
+
+## News
+
+- *2022-10-18* [Inpainting Model](#inpainting-with-stable-diffusion)
+![Inpainting Banner](assets/inpaintingbanner.png)
 
   
 ## Requirements
@@ -49,7 +56,7 @@ then finetuned on 512x512 images.
 in its training data. 
 Details on the training procedure and data, as well as the intended use of the model can be found in the corresponding [model card](Stable_Diffusion_v1_Model_Card.md).*
 
-The weights are available via [the CompVis organization at Hugging Face](https://huggingface.co/CompVis) under [a license which contains specific use-based restrictions to prevent misuse and harm as informed by the model card, but otherwise remains permissive](LICENSE). While commercial use is permitted under the terms of the license, **we do not recommend using the provided weights for services or products without additional safety mechanisms and considerations**, since there are [known limitations and biases](Stable_Diffusion_v1_Model_Card.md#limitations-and-bias) of the weights, and research on safe and ethical deployment of general text-to-image models is an ongoing effort. **The weights are research artifacts and should be treated as such.**
+The weights are available via [the CompVis](https://huggingface.co/CompVis) and [Runway organization at Hugging Face](https://huggingface.co/runwayml) under [a license which contains specific use-based restrictions to prevent misuse and harm as informed by the model card, but otherwise remains permissive](LICENSE). While commercial use is permitted under the terms of the license, **we do not recommend using the provided weights for services or products without additional safety mechanisms and considerations**, since there are [known limitations and biases](Stable_Diffusion_v1_Model_Card.md#limitations-and-bias) of the weights, and research on safe and ethical deployment of general text-to-image models is an ongoing effort. **The weights are research artifacts and should be treated as such.**
 
 [The CreativeML OpenRAIL M license](LICENSE) is an [Open RAIL M license](https://www.licenses.ai/blog/2022/8/18/naming-convention-of-responsible-ai-licenses), adapted from the work that [BigScience](https://bigscience.huggingface.co/) and [the RAIL Initiative](https://www.licenses.ai/) are jointly carrying in the area of responsible AI licensing. See also [the article about the BLOOM Open RAIL license](https://bigscience.huggingface.co/blog/the-bigscience-rail-license) on which our license is based.
 
@@ -64,8 +71,7 @@ We currently provide the following checkpoints:
 filtered to images with an original size `>= 512x512`, and an estimated watermark probability `< 0.5`. The watermark estimate is from the [LAION-5B](https://laion.ai/blog/laion-5b/) metadata, the aesthetics score is estimated using the [LAION-Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor)).
 - `sd-v1-3.ckpt`: Resumed from `sd-v1-2.ckpt`. 195k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
 - `sd-v1-4.ckpt`: Resumed from `sd-v1-2.ckpt`. 225k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
-- `sd-v1-5.ckpt`: Resumed from `sd-v1-2.ckpt`. 595k steps at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598).
-- `sd-v1-5-inpainting.ckpt`: Resumed from `sd-v1-5.ckpt`. 440k steps of inpainting training at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598). The UNet has 5 additional input channels (4 for the encoded masked-image and 1 for the mask itself) whose weights were zero-initialized after restoring the `sd-v1-5.ckpt` checkpoint. During training, we generate synthetic masks and in 25\% mask everything.
+- `sd-v1-5-inpainting.ckpt`: Resumed from `sd-v1-2.ckpt`. First 595k steps regular training, then 440k steps of inpainting training at resolution `512x512` on "laion-aesthetics v2 5+" and 10\% dropping of the text-conditioning to improve [classifier-free guidance sampling](https://arxiv.org/abs/2207.12598). For inpainting, the UNet has 5 additional input channels (4 for the encoded masked-image and 1 for the mask itself) whose weights were zero-initialized after restoring the non-inpainting checkpoint. During training, we generate synthetic masks and in 25\% mask everything.
 
 Evaluations with different classifier-free guidance scales (1.5, 2.0, 3.0, 4.0,
 5.0, 6.0, 7.0, 8.0) and 50 PLMS sampling
@@ -167,17 +173,6 @@ image.save("astronaut_rides_horse.png")
 ```
 
 
-### Image Inpainting with Stable Diffusion
-![txt2img-stable2](assets/stable-inpainting/merged-bench.png)
-[Download the checkpoint](https://huggingface.co/CompVis/stable-diffusion-v1-5-inpainting-original) finetuned for inpainting and run
-
-```
-streamlit run scripts/inpaint_st.py -- configs/stable-diffusion/v1-inpainting-inference.yaml <path-to-checkpoint>
-```
-
-for a streamlit demo of the inpainting model.
-
-
 ### Image Modification with Stable Diffusion
 
 By using a diffusion-denoising mechanism as first proposed by [SDEdit](https://arxiv.org/abs/2108.01073), the model can be used for different 
@@ -201,6 +196,44 @@ Values that approach 1.0 allow for lots of variations but will also produce imag
 ![out2](assets/stable-samples/img2img/mountains-2.png)
 
 This procedure can, for example, also be used to upscale samples from the base model.
+
+
+### Inpainting with Stable Diffusion
+
+![txt2img-stable2](assets/stable-inpainting/merged-bench.png)
+
+We provide a checkpoint finetuned for inpainting to perform text-based erase \&
+replace functionality.
+
+#### Quick Start
+After [creating a suitable environment](#Requirements), download the [checkpoint finetuned for inpainting](https://huggingface.co/runwayml/stable-diffusion-inpainting) and run
+
+```
+streamlit run scripts/inpaint_st.py -- configs/stable-diffusion/v1-inpainting-inference.yaml <path-to-checkpoint>
+```
+
+for a streamlit demo of the inpainting model.
+Details on the training procedure and data, as well as the intended use of the model can be found in the corresponding [model card](Stable_Diffusion_v1_Model_Card.md).
+
+
+#### Evaluation
+To assess the performance of the inpainting model, we used the same evaluation
+protocol as in our [LDM paper](https://arxiv.org/abs/2112.10752). Since the
+Stable Diffusion Inpainting Model acccepts a text input, we simply used a fixed
+prompt of `photograph of a beautiful empty scene, highest quality settings`.
+
+| Model                       | FID  | LPIPS            |
+|-----------------------------|------|------------------|
+| Stable Diffusion Inpainting | 1.00 | 0.141 (+- 0.082) |
+| Latent Diffusion Inpainting | 1.50 | 0.137 (+- 0.080) |
+| CoModGAN                    | 1.82 | 0.15             |
+| LaMa                        | 2.21 | 0.134 (+- 0.080) |
+
+
+#### Online Demo
+If you want to try the model without setting things up locally, you can try the
+[Erase \& Replace](https://app.runwayml.com/ai-tools/erase-and-replace) tool at [Runway](https://runwayml.com/):
+
 
 
 ## Comments 
