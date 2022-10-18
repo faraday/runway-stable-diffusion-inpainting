@@ -234,6 +234,7 @@ prompt of `photograph of a beautiful empty scene, highest quality settings`.
 If you want to try the model without setting things up locally, you can try the
 [Erase \& Replace](https://app.runwayml.com/ai-tools/erase-and-replace) tool at [Runway](https://runwayml.com/):
 
+https://user-images.githubusercontent.com/2175508/196499595-d8194abf-fec4-4927-bf14-af106fe4fa40.mp4
 
 
 ## Comments 
