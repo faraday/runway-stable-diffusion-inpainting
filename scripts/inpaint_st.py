@@ -14,6 +14,43 @@ from ldm.models.diffusion.ddim import DDIMSampler
 
 MAX_SIZE = 640
 
+# load safety model
+from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
+from transformers import AutoFeatureExtractor
+from imwatermark import WatermarkEncoder
+import cv2
+
+safety_model_id = "CompVis/stable-diffusion-safety-checker"
+safety_feature_extractor = AutoFeatureExtractor.from_pretrained(safety_model_id)
+safety_checker = StableDiffusionSafetyChecker.from_pretrained(safety_model_id)
+wm = "StableDiffusionV1-Inpainting"
+wm_encoder = WatermarkEncoder()
+wm_encoder.set_watermark('bytes', wm.encode('utf-8'))
+
+def numpy_to_pil(images):
+    """
+    Convert a numpy image or a batch of images to a PIL image.
+    """
+    if images.ndim == 3:
+        images = images[None, ...]
+    images = (images * 255).round().astype("uint8")
+    pil_images = [Image.fromarray(image) for image in images]
+
+    return pil_images
+
+def put_watermark(img):
+    if wm_encoder is not None:
+        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        img = wm_encoder.encode(img, 'dwtDct')
+        img = Image.fromarray(img[:, :, ::-1])
+    return img
+
+def check_safety(x_image):
+    safety_checker_input = safety_feature_extractor(numpy_to_pil(x_image), return_tensors="pt")
+    x_checked_image, has_nsfw_concept = safety_checker(images=x_image, clip_input=safety_checker_input.pixel_values)
+    assert x_checked_image.shape[0] == len(has_nsfw_concept)
+    return x_checked_image, has_nsfw_concept
+
 
 @st.cache(allow_output_mutation=True)
 def initialize_model(config, ckpt):
@@ -106,8 +143,13 @@ def inpaint(sampler, image, mask, prompt, seed, scale, ddim_steps, num_samples=1
             result = torch.clamp((x_samples_ddim+1.0)/2.0,
                                  min=0.0, max=1.0)
 
-            result = result.cpu().numpy().transpose(0,2,3,1)*255
-    return [Image.fromarray(img.astype(np.uint8)) for img in result]
+            result = result.cpu().numpy().transpose(0,2,3,1)
+            result, has_nsfw_concept = check_safety(result)
+            result = result*255
+
+    result = [Image.fromarray(img.astype(np.uint8)) for img in result]
+    result = [put_watermark(img) for img in result]
+    return result
 
 
 def run():
