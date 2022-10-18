@@ -12,6 +12,9 @@ import torch
 from ldm.models.diffusion.ddim import DDIMSampler
 
 
+MAX_SIZE = 640
+
+
 @st.cache(allow_output_mutation=True)
 def initialize_model(config, ckpt):
     config = OmegaConf.load(config)
@@ -117,8 +120,13 @@ def run():
         image = Image.open(image)
         w, h = image.size
         print(f"loaded input image of size ({w}, {h})")
-        width, height = map(lambda x: x - x % 64, (w, h))  # resize to integer multiple of 32
+        if max(w, h) > MAX_SIZE:
+            factor = MAX_SIZE / max(w, h)
+            w = int(factor*w)
+            h = int(factor*h)
+        width, height = map(lambda x: x - x % 64, (w, h))  # resize to integer multiple of 64
         image = image.resize((width, height))
+        print(f"resized to ({width}, {height})")
 
         prompt = st.text_input("Prompt")
 
